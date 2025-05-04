@@ -46,11 +46,6 @@ def _trans_input_filter(weights, rotations, rotation_matrix) -> torch.Tensor:
       rotation_matrix: float32, rotation matrix of size [3, 3]
     """
 
-    # Flatten weights tensor.
-    weights_flat = weights.permute(2, 1, 0, 3, 4)  # [1, 3, c_out, k, k]
-    weights_shape = weights_flat.shape
-    weights_flat = weights_flat.reshape((1, 3, -1))  # [1, 3, c_out*k*k]
-
     # Construct full transformation matrix.
     rotation_matrix = torch.stack(
         [torch.matrix_power(rotation_matrix, i) for i in range(rotations)], dim=0
@@ -58,13 +53,18 @@ def _trans_input_filter(weights, rotations, rotation_matrix) -> torch.Tensor:
 
     # Apply transformation to weights.
     # [rotations, 3, 3] * [1, 3, c_out*k*k] --> [rotations, 3, c_out*k*k]
-    transformed_weights = torch.matmul(rotation_matrix, weights_flat)
-    # [rotations, 1, c_in (3), c_out, k, k]
-    transformed_weights = transformed_weights.view((rotations,) + weights_shape)
-    # [c_out, rotations, c_in (3), 1, k, k]
-    tw = transformed_weights.permute(3, 0, 2, 1, 4, 5)
+    all_transformed_weights = []
+    for angle in range(4):
+        rotated_weights = torch.rot90(weights, k=angle, dims=[-2,-1])
+        weights_flat = weights.permute(2, 1, 0, 3, 4)  # [1, 3, c_out, k, k]
+        weights_shape = weights_flat.shape
+        weights_flat = weights_flat.reshape((1, 3, -1))  # [1, 3, c_out*k*k]
+        transformed_weights = torch.matmul(rotation_matrix, weights_flat)
+        transformed_weights = transformed_weights.view((rotations,) + weights_shape)
+        tw = transformed_weights.permute(3, 0, 2, 1, 4, 5)
+        all_transformed_weights.append(tw.contiguous())
 
-    return tw.contiguous()
+    return torch.cat(transformed_all, dim=1)
 
 
 def _trans_hidden_filter(weights: torch.Tensor, rotations: int) -> torch.Tensor:
@@ -73,7 +73,7 @@ def _trans_hidden_filter(weights: torch.Tensor, rotations: int) -> torch.Tensor:
     # Create placeholder for output tensor
     w_shape = weights.shape
     transformed_weights = torch.zeros(
-        ((w_shape[0],) + (rotations,) + w_shape[1:]), device=weights.device
+        ((w_shape[0],) + (4*rotations,) + w_shape[1:]), device=weights.device
     )
 
     # Apply cyclic permutation on output tensor
