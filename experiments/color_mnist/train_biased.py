@@ -24,8 +24,8 @@ class PL_model(pl.LightningModule):
 
         # Logging.
         self.save_hyperparameters()
-        self.train_acc = torchmetrics.Accuracy()
-        self.test_acc = torchmetrics.Accuracy()
+        self.train_acc = torchmetrics.Accuracy(task = "multiclass", num_classes=10)
+        self.test_acc = torchmetrics.Accuracy(task = "multiclass", num_classes=10)
         self.preds = torch.Tensor()  # log for confmat
         self.gts = torch.Tensor()  # log for confmat
 
@@ -147,14 +147,14 @@ def getDataset(std=0, subset_samples=None):
     # Load train dataset files.
     train = CustomDataset(
         torch.load(
-            os.environ["DATA_DIR"] + "/colormnist_biased/train_{}.pt".format(std)
+            os.environ["DATA_DIR"] + "/colormnist_biased/train_{}.pt".format(std), weights_only= False
         ),
         jitter=args.jitter,
         grayscale=args.grayscale,
     )
     test = CustomDataset(
         torch.load(
-            os.environ["DATA_DIR"] + "/colormnist_biased/test_{}.pt".format(std)
+            os.environ["DATA_DIR"] + "/colormnist_biased/test_{}.pt".format(std), weights_only = False
         ),
         grayscale=args.grayscale,
     )
@@ -215,8 +215,8 @@ def main(args) -> None:
         args.std, args.subset_samples, args.seed, args.rotations
     )
     mylogger = pl_loggers.WandbLogger(  # type: ignore
-        project="ceconv-colormnist-new",
-        entity="tudcv",
+        project="AM220FinalProject",
+        entity="mpershyna-organization",
         config=vars(args),
         name=run_name,
         save_dir=os.environ["WANDB_DIR"],

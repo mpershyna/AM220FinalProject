@@ -5,7 +5,7 @@ Generate ColorMNIST dataset with different standard deviations of the color.
 
 import argparse
 import os
-
+import random
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +17,7 @@ from torchvision.datasets import MNIST
 np.random.seed(0)
 torch.manual_seed(0)
 
+rotate = True
 
 def generate_set(dataset, std) -> TensorDataset:
     """Generate color mnist dataset."""
@@ -40,7 +41,12 @@ def generate_set(dataset, std) -> TensorDataset:
     # Convert hsv to rgb.
     imgs_rgb = []
     for img in imgs:
-        imgs_rgb.append(cv2.cvtColor(img, cv2.COLOR_HSV2RGB))
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
+        #if rotate == True:
+        #    rotation_deg = random.choice([0, 90, 180, 270])
+        #    if rotation_deg > 0:
+        #        img_rgb = np.rot90(img_rgb, k=(rotation_deg//90))
+        imgs_rgb.append(img_rgb)
     imgs_rgb = np.stack(imgs_rgb, axis=0) / 255
 
     # Generate noisy background.
@@ -53,6 +59,16 @@ def generate_set(dataset, std) -> TensorDataset:
         + (1 - weight[..., None]) * noisy_background[..., None]
     )
     imgs_rgb = np.clip(imgs_rgb, 0, 1)
+
+    #Rotate images if desired
+    if rotate:
+        rotated_imgs = []
+        for img in imgs_rgb:
+            rotation_deg = random.choice([0, 90, 180, 270])
+            if rotation_deg > 0:
+                img = np.rot90(img, k=(rotation_deg//90))
+            rotated_imgs.append(img)
+        imgs_rgb = np.stack(rotated_imgs, axis=0)
 
     # Convert to tensor.
     imgs_rgb = torch.from_numpy(imgs_rgb).permute(0, 3, 1, 2).float()

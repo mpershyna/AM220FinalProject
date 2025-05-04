@@ -33,14 +33,14 @@ class PL_model(pl.LightningModule):
         self.gts = torch.tensor([])
 
         # Store accuracy metrics for logging.
-        self.train_acc = torchmetrics.Accuracy()
-        self.test_acc = torchmetrics.Accuracy()
+        self.train_acc = torchmetrics.Accuracy(task = "multiclass", num_classes=10)
+        self.test_acc = torchmetrics.Accuracy(task = "multiclass", num_classes=10)
 
         # Store accuracy metrics for testing.
         self.test_acc_dict = {}
         self.test_jitter = np.linspace(-0.5, 0.5, 37)
         for i in self.test_jitter:
-            self.test_acc_dict["test_acc_{:.4f}".format(i)] = torchmetrics.Accuracy()
+            self.test_acc_dict["test_acc_{:.4f}".format(i)] = torchmetrics.Accuracy(task = "multiclass", num_classes=10)
 
         # Loss function
         self.criterion = nn.CrossEntropyLoss()
@@ -223,8 +223,8 @@ def main(args) -> None:
     if args.run_name is not None:
         run_name += "-" + args.run_name
     mylogger = pl_loggers.WandbLogger(  # type: ignore
-        project="color-equivariance-classification",
-        entity="tudcv",
+        project="AM220FinalProject",
+        entity="mpershyna-organization",
         config=vars(args),
         name=run_name,
         save_dir=os.environ["WANDB_DIR"],

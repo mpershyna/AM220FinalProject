@@ -24,8 +24,8 @@ class PL_model(pl.LightningModule):
 
         # Logging.
         self.save_hyperparameters()
-        self.train_acc = torchmetrics.Accuracy()
-        self.test_acc = torchmetrics.Accuracy()
+        self.train_acc = torchmetrics.Accuracy(task = "multiclass", num_classes=30)
+        self.test_acc = torchmetrics.Accuracy(task = "multiclass", num_classes=30)
         self.preds = torch.tensor([])
         self.gts = torch.tensor([])
 
@@ -142,12 +142,12 @@ class CustomDataset(TensorDataset):
 def getDataset():
     # Load train dataset files.
     train = CustomDataset(
-        torch.load(os.environ["DATA_DIR"] + "/colormnist_longtailed/train.pt"),
+        torch.load(os.environ["DATA_DIR"] + "/colormnist_longtailed/train.pt", weights_only=False),
         jitter=args.jitter,
         grayscale=args.grayscale,
     )
     test = CustomDataset(
-        torch.load(os.environ["DATA_DIR"] + "/colormnist_longtailed/test.pt"),
+        torch.load(os.environ["DATA_DIR"] + "/colormnist_longtailed/test.pt", weights_only=False),
         jitter=0.0,
         grayscale=args.grayscale,
     )
@@ -197,8 +197,8 @@ def main(args) -> None:
     # Callbacks and loggers.
     run_name = "longtailed-seed_{}-rotations_{}".format(args.seed, args.rotations)
     mylogger = pl_loggers.WandbLogger(  # type: ignore
-        project="ceconv-colormnist-new",
-        entity="tudcv",
+        project="AM220FinalProject",
+        entity="mpershyna-organization",
         config=vars(args),
         name=run_name,
         tags=["longtailed"],
