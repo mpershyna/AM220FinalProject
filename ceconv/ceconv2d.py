@@ -77,8 +77,12 @@ def _trans_hidden_filter(weights: torch.Tensor, rotations: int) -> torch.Tensor:
     )
 
     # Apply cyclic permutation on output tensor
-    for i in range(rotations):
-        transformed_weights[:, i, :, :, :, :] = torch.roll(weights, shifts=i, dims=2)
+    for j in range(4):
+        start = j * rotations
+        end = (j + 1) * rotations
+        block = weights[:, start:end, :, :, :, :]
+        for i in range(rotations):
+            transformed_weights[:, start + i, :, :, :, :] = torch.roll(block, shifts=i, dims=2)
 
     return transformed_weights
 
