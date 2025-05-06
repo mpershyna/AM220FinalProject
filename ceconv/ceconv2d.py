@@ -64,7 +64,7 @@ def _trans_input_filter(weights, rotations, rotation_matrix) -> torch.Tensor:
         tw = transformed_weights.permute(3, 0, 2, 1, 4, 5)
         all_transformed_weights.append(tw.contiguous())
 
-    return torch.cat(transformed_all, dim=1)
+    return torch.cat(all_transformed_weights, dim=1)
 
 
 def _trans_hidden_filter(weights: torch.Tensor, rotations: int) -> torch.Tensor:
@@ -72,17 +72,19 @@ def _trans_hidden_filter(weights: torch.Tensor, rotations: int) -> torch.Tensor:
 
     # Create placeholder for output tensor
     w_shape = weights.shape
+    #print(f'ROTATIONS={rotations}')
     transformed_weights = torch.zeros(
         ((w_shape[0],) + (4*rotations,) + w_shape[1:]), device=weights.device
     )
-
+    #print(f'SHAPE OF TRANSFORMED_WEIGHTS={transformed_weights.shape}')
     # Apply cyclic permutation on output tensor
     for j in range(4):
+        rotated_weights = torch.rot90(weights, k=j, dims=[-2,-1])
         start = j * rotations
         end = (j + 1) * rotations
-        block = weights[:, start:end, :, :, :, :]
+        #print(f'WEIGHTS SHAPE IS {weights.shape}, ROTATED SHAPE IS {rotated_weights.shape}, j={j}')
         for i in range(rotations):
-            transformed_weights[:, start + i, :, :, :, :] = torch.roll(block, shifts=i, dims=2)
+            transformed_weights[:, start + i, :, :, :, :] = torch.roll(rotated_weights, shifts=i, dims=2)
 
     return transformed_weights
 
@@ -125,6 +127,7 @@ class CEConv2d(nn.Conv2d):
     ) -> None:
         self.in_rotations = in_rotations
         self.out_rotations = out_rotations
+        self.spatial_rotations = 4
         self.separable = separable
 
         super().__init__(in_channels, out_channels, kernel_size, **kwargs)
@@ -148,12 +151,12 @@ class CEConv2d(nn.Conv2d):
                         torch.Tensor(out_channels, in_channels, 1, *self.kernel_size)
                     )
                     self.pointwise_weight = Parameter(
-                        torch.Tensor(out_channels, in_channels, self.in_rotations, 1, 1)
+                        torch.Tensor(out_channels, in_channels, self.in_rotations * self.spatial_rotations, 1, 1)
                     )
             else:
                 self.weight = Parameter(
                     torch.Tensor(
-                        out_channels, in_channels, self.in_rotations, *self.kernel_size
+                        out_channels, in_channels, self.in_rotations * self.spatial_rotations, *self.kernel_size
                     )
                 )
 
@@ -163,7 +166,7 @@ class CEConv2d(nn.Conv2d):
         """Initialize parameters."""
 
         # Compute standard deviation for weight initialization.
-        n = self.in_channels * self.in_rotations * np.prod(self.kernel_size)
+        n = self.in_channels * self.in_rotations * np.prod(self.kernel_size) * self.spatial_rotations
         stdv = 1.0 / math.sqrt(n)
 
         # Initialize weights.
@@ -192,28 +195,44 @@ class CEConv2d(nn.Conv2d):
                 weight = self.weight
             tw = _trans_hidden_filter(weight, self.out_rotations)
 
-        tw_shape = (
-            self.out_channels * self.out_rotations,
-            self.in_channels * self.in_rotations,
-            *self.kernel_size,
-        )
-        tw = tw.view(tw_shape)
+        if self.in_rotations == 1:
+            tw_shape = (
+                self.out_channels * self.out_rotations * self.spatial_rotations,
+                self.in_channels * self.in_rotations,
+                *self.kernel_size,
+            )
+            tw = tw.view(tw_shape)
+        else:
+            tw_shape = (
+                self.out_channels * self.out_rotations * self.spatial_rotations,
+                self.in_channels * self.in_rotations * self.spatial_rotations,
+                *self.kernel_size,
+            )
+            tw = tw.view(tw_shape)
 
         # Apply convolution.
         input_shape = input.size()
-        input = input.view(
-            input_shape[0],
-            self.in_channels * self.in_rotations,
-            input_shape[-2],
-            input_shape[-1],
-        )
+        if self.in_rotations == 1:
+            input = input.view(
+                input_shape[0],
+                self.in_channels * self.in_rotations,
+                input_shape[-2],
+                input_shape[-1],
+            )
+        else:
+            input = input.view(
+                input_shape[0],
+                self.in_channels * self.in_rotations * self.spatial_rotations,
+                input_shape[-2],
+                input_shape[-1],
+            )
 
         y = F.conv2d(
             input, weight=tw, bias=None, stride=self.stride, padding=self.padding
         )
 
         batch_size, _, ny_out, nx_out = y.size()
-        y = y.view(batch_size, self.out_channels, self.out_rotations, ny_out, nx_out)
+        y = y.view(batch_size, self.out_channels, self.out_rotations * self.spatial_rotations, ny_out, nx_out)
 
         # Apply bias.
         if self.bias is not None:

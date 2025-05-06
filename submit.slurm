@@ -9,10 +9,16 @@
 #SBATCH -e myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=mpershyna@g.harvard.edu
+#SBATCH --account=mccoll_lab
 
 # load modules
 module load python/3.12.8-fasrc01
 module load cuda/12.4.1-fasrc01
+
+# set environment variables
+export WANDB_DIR=/n/home01/mpershyna/AM220/CEConv/wandb
+export DATA_DIR=/n/home01/mpershyna/AM220/CEConv/data
+export OUT_DIR=/n/home01/mpershyna/AM220/CEConv/output
 
 # run code
 source venv/bin/activate

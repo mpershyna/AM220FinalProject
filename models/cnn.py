@@ -77,7 +77,7 @@ class CECNN(nn.Module):
         kernels = [3, 3, 3, 3, 3, 3, 4]
         do = [True, False, True, True, True, False, False]
         mp = GroupMaxPool2d(2) if ce_layers >= 2 else nn.MaxPool2d(2)
-        planes_ce = rotations * planes if not groupcosetmaxpool else planes
+        planes_ce = 4 * rotations * planes if not groupcosetmaxpool else planes
 
         self.ceconv_list = nn.ModuleList(
             [
