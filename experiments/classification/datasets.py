@@ -1,6 +1,7 @@
 import math
 import torch
 import os
+import random
 
 from torchvision import datasets
 from torchvision import transforms as T
@@ -32,8 +33,15 @@ def get_dataset(args, path=None, download=True, num_workers=4) -> tuple[DataLoad
     # Define transformations
     if "cifar" in args.dataset:
         # Small size images.
+        rotation_num = random.choice([0,1,2,3])
         tr_train = T.Compose(
             [
+                T.RandomChoice([
+                    T.RandomRotation((0, 0)),
+                    T.RandomRotation((90, 90)),
+                    T.RandomRotation((180, 180)),
+                    T.RandomRotation((270, 270)),
+                ]),
                 T.ColorJitter(
                     brightness=0,
                     contrast=0,
@@ -45,7 +53,13 @@ def get_dataset(args, path=None, download=True, num_workers=4) -> tuple[DataLoad
                 T.ToTensor(),
             ]
         )
-        tr_test = T.Compose([T.ToTensor()])
+        tr_test = T.Compose([
+                T.RandomChoice([
+                    T.RandomRotation((0, 0)),
+                    T.RandomRotation((90, 90)),
+                    T.RandomRotation((180, 180)),
+                    T.RandomRotation((270, 270)),]),
+                T.ToTensor()])
     else:
         # ImageNet-style preprocessing.
         tr_train = T.Compose(

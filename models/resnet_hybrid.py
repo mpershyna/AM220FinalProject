@@ -253,7 +253,7 @@ class HybridResNet(nn.Module):
         separable=False,
     ) -> None:
         super(HybridResNet, self).__init__()
-
+        self.spatial_rotations = 4
         assert rotations > 0, "rotations must be greater than 0"
         if rotations > 1:
             assert ce_stages > 0, "ce_stages must be greater than 0"
@@ -272,12 +272,12 @@ class HybridResNet(nn.Module):
             width = 64 if len(num_blocks) == 4 else 32
             if separable and rotations > 1:
                 channels = [
-                    math.floor(math.sqrt(9 * width**2 / (9 + rotations)) * 2**i)
+                    math.floor(math.sqrt(9 * width**2 / (9 + self.spatial_rotations * rotations)) * 2**i)
                     for i in range(len(num_blocks))
                 ]
             else:
                 channels = [
-                    int(width / math.sqrt(rotations) * 2**i)
+                    int(width / math.sqrt(self.spatial_rotations * rotations) * 2**i)
                     for i in range(len(num_blocks))
                 ]
 
@@ -345,7 +345,7 @@ class HybridResNet(nn.Module):
             self.cosetpoollayer = GroupCosetMaxPool()
         else:
             self.linear = nn.Linear(
-                channels[-1] * rotations * block.expansion, num_classes
+                channels[-1] * self.spatial_rotations * rotations * block.expansion, num_classes
             )
 
     def _make_layer(self, block, planes, num_blocks, stride, rotations, separable):

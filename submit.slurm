@@ -22,9 +22,10 @@ export OUT_DIR=/n/home01/mpershyna/AM220/CEConv/output
 
 # run code
 source venv/bin/activate
-python -m experiments.color_mnist.train_biased --std 0 --rotations 3 --planes 17 --separable
-python -m experiments.color_mnist.train_biased --std 12 --rotations 3 --planes 17 --separable
-python -m experiments.color_mnist.train_biased --std 36 --rotations 3 --planes 17 --separable
-python -m experiments.color_mnist.train_biased --std 48 --rotations 3 --planes 17 --separable
-python -m experiments.color_mnist.train_biased --std 60 --rotations 3 --planes 17 --separable
-python -m experiments.color_mnist.train_biased --std 1000000 --rotations 3 --planes 17 --separable
+python -m experiments.color_mnist.train_biased --std 0 --rotations 3 --planes 13 --separable
+python -m experiments.color_mnist.train_biased --std 12 --rotations 3 --planes 13 --separable
+python -m experiments.color_mnist.train_biased --std 24 --rotations 3 --planes 13 --separable
+python -m experiments.color_mnist.train_biased --std 36 --rotations 3 --planes 13 --separable
+python -m experiments.color_mnist.train_biased --std 48 --rotations 3 --planes 13 --separable
+python -m experiments.color_mnist.train_biased --std 60 --rotations 3 --planes 13 --separable
+python -m experiments.color_mnist.train_biased --std 1000000 --rotations 3 --planes 13 --separable
