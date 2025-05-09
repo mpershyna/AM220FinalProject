@@ -28,7 +28,7 @@ source venv/bin/activate
 #python -m experiments.color_mnist.train_biased --std 60 --rotations 3 --planes 17 --separable
 #python -m experiments.color_mnist.train_biased --std 1000000 --rotations 3 --planes 17 --separable
 
-python -m experiments.classification.train --rotations 3 --separable
-python -m experiments.classification.train --rotations 3 --separable --jitter 0.5
+#python -m experiments.classification.train --rotations 3 --separable
+#python -m experiments.classification.train --rotations 3 --separable --jitter 0.5
 python -m experiments.classification.train --rotations 3 --groupcosetmaxpool --separable
 python -m experiments.classification.train --rotations 3 --groupcosetmaxpool --separable --jitter 0.5
